@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Crawl Comics</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@4.2.1/dist/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+      body {
+        background-size: cover;
+        background-repeat: no-repeat;
+      }
+
+      .content {
+        height: 100vh;
+        margin-top: 5%;
+      }
+
+      .input-group {
+        max-width: 80vw;
+        margin: auto;
+      }
+      .search-input {
+        max-width: 90vw;
+        margin: auto;
+      }
+      .table {
+        max-width: 90vw;
+        margin: auto;
+      }
+      .progress {
+        width: 150px;
+        height: 150px;
+        background: none;
+        position: relative;
+      }
+
+      .progress::after {
+        content: "";
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 6px solid #eee;
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+
+      .progress > span {
+        width: 50%;
+        height: 100%;
+        overflow: hidden;
+        position: absolute;
+        top: 0;
+        z-index: 1;
+      }
+
+      .progress .progress-left {
+        left: 0;
+      }
+
+      .progress .progress-bar {
+        width: 100%;
+        height: 100%;
+        background: none;
+        border-width: 6px;
+        border-style: solid;
+        position: absolute;
+        top: 0;
+      }
+
+      .progress .progress-left .progress-bar {
+        left: 100%;
+        border-top-right-radius: 80px;
+        border-bottom-right-radius: 80px;
+        border-left: 0;
+        -webkit-transform-origin: center left;
+        transform-origin: center left;
+      }
+
+      .progress .progress-right {
+        right: 0;
+      }
+
+      .progress .progress-right .progress-bar {
+        left: -100%;
+        border-top-left-radius: 80px;
+        border-bottom-left-radius: 80px;
+        border-right: 0;
+        -webkit-transform-origin: center right;
+        transform-origin: center right;
+      }
+
+      .progress .progress-value {
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        background: #ff7e5f;
+        background: -webkit-linear-gradient(to right, #ff7e5f, #feb47b);
+        background: linear-gradient(to right, #ff7e5f, #feb47b);
+        min-height: 100vh;
+      }
+      .manga-url:hover {
+        color: cornflowerblue !important;
+      }
+
+      .rounded-lg {
+        border-radius: 1rem;
+      }
+
+      .text-gray {
+        color: #aaa;
+      }
+
+      div.h4 {
+        line-height: 1rem;
+      }
+      .swal-overlay {
+        background-color: rgba(149, 43, 165, 0.45);
+      }
+      .search-input-field {
+        width: 30%;
+        margin-left: auto;
+      }
+      #table-search-input,
+      #main-table,
+      #check-btn {
+        background-color: #ffffff35;
+        border: none;
+      }
+      .has-search .form-control {
+        padding-left: 2.375rem;
+      }
+
+      .has-search .form-control-feedback {
+        position: absolute;
+        z-index: 2;
+        display: block;
+        width: 2.375rem;
+        height: 2.375rem;
+        line-height: 2.375rem;
+        text-align: center;
+        pointer-events: none;
+        color: #aaa;
+      }
+      /* Absolute Center Spinner */
+      .loading {
+        display: none;
+        position: fixed;
+        z-index: 999;
+        height: 2em;
+        width: 2em;
+        overflow: show;
+        margin: auto;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+      }
+
+      /* Transparent Overlay */
+      .loading:before {
+        content: "";
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(rgba(20, 20, 20, 0.8), rgba(0, 0, 0, 0.8));
+
+        background: -webkit-radial-gradient(
+          rgba(20, 20, 20, 0.8),
+          rgba(0, 0, 0, 0.8)
+        );
+      }
+
+      /* :not(:required) hides these rules from IE9 and below */
+      .loading:not(:required) {
+        /* hide "loading..." text */
+        font: 0/0 a;
+        color: transparent;
+        text-shadow: none;
+        background-color: transparent;
+        border: 0;
+      }
+
+      .loading:not(:required):after {
+        content: "";
+        display: block;
+        font-size: 10px;
+        width: 1em;
+        height: 1em;
+        margin-top: -0.5em;
+        -webkit-animation: spinner 150ms infinite linear;
+        -moz-animation: spinner 150ms infinite linear;
+        -ms-animation: spinner 150ms infinite linear;
+        -o-animation: spinner 150ms infinite linear;
+        animation: spinner 150ms infinite linear;
+        border-radius: 0.5em;
+        -webkit-box-shadow: rgba(255, 255, 255, 0.75) 1.5em 0 0 0,
+          rgba(255, 255, 255, 0.75) 1.1em 1.1em 0 0,
+          rgba(255, 255, 255, 0.75) 0 1.5em 0 0,
+          rgba(255, 255, 255, 0.75) -1.1em 1.1em 0 0,
+          rgba(255, 255, 255, 0.75) -1.5em 0 0 0,
+          rgba(255, 255, 255, 0.75) -1.1em -1.1em 0 0,
+          rgba(255, 255, 255, 0.75) 0 -1.5em 0 0,
+          rgba(255, 255, 255, 0.75) 1.1em -1.1em 0 0;
+        box-shadow: rgba(255, 255, 255, 0.75) 1.5em 0 0 0,
+          rgba(255, 255, 255, 0.75) 1.1em 1.1em 0 0,
+          rgba(255, 255, 255, 0.75) 0 1.5em 0 0,
+          rgba(255, 255, 255, 0.75) -1.1em 1.1em 0 0,
+          rgba(255, 255, 255, 0.75) -1.5em 0 0 0,
+          rgba(255, 255, 255, 0.75) -1.1em -1.1em 0 0,
+          rgba(255, 255, 255, 0.75) 0 -1.5em 0 0,
+          rgba(255, 255, 255, 0.75) 1.1em -1.1em 0 0;
+      }
+
+      /* Animation */
+
+      @-webkit-keyframes spinner {
+        0% {
+          -webkit-transform: rotate(0deg);
+          -moz-transform: rotate(0deg);
+          -ms-transform: rotate(0deg);
+          -o-transform: rotate(0deg);
+          transform: rotate(0deg);
+        }
+        100% {
+          -webkit-transform: rotate(360deg);
+          -moz-transform: rotate(360deg);
+          -ms-transform: rotate(360deg);
+          -o-transform: rotate(360deg);
+          transform: rotate(360deg);
+        }
+      }
+      @-moz-keyframes spinner {
+        0% {
+          -webkit-transform: rotate(0deg);
+          -moz-transform: rotate(0deg);
+          -ms-transform: rotate(0deg);
+          -o-transform: rotate(0deg);
+          transform: rotate(0deg);
+        }
+        100% {
+          -webkit-transform: rotate(360deg);
+          -moz-transform: rotate(360deg);
+          -ms-transform: rotate(360deg);
+          -o-transform: rotate(360deg);
+          transform: rotate(360deg);
+        }
+      }
+      @-o-keyframes spinner {
+        0% {
+          -webkit-transform: rotate(0deg);
+          -moz-transform: rotate(0deg);
+          -ms-transform: rotate(0deg);
+          -o-transform: rotate(0deg);
+          transform: rotate(0deg);
+        }
+        100% {
+          -webkit-transform: rotate(360deg);
+          -moz-transform: rotate(360deg);
+          -ms-transform: rotate(360deg);
+          -o-transform: rotate(360deg);
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes spinner {
+        0% {
+          -webkit-transform: rotate(0deg);
+          -moz-transform: rotate(0deg);
+          -ms-transform: rotate(0deg);
+          -o-transform: rotate(0deg);
+          transform: rotate(0deg);
+        }
+        100% {
+          -webkit-transform: rotate(360deg);
+          -moz-transform: rotate(360deg);
+          -ms-transform: rotate(360deg);
+          -o-transform: rotate(360deg);
+          transform: rotate(360deg);
+        }
+      }
+      .form-upload-manga {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      #slug-manga,
+      #link-manga {
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="loading">Loading&#8230;</div>
+    <div class="content">
+      <div class="input-group mb-3">
+        <input
+          id="input-crawl"
+          type="text"
+          class="form-control shadow"
+          placeholder="Link"
+          aria-label="Link"
+          aria-describedby="basic-addon2"
+        />
+        <div class="input-group-append shadow">
+          <button id="btn-crawl" class="btn btn-primary" type="button">
+            Crawl
+          </button>
+        </div>
+      </div>
+      <div style="width: 100%; display: flex; justify-content: center">
+        <h2 style="font-style: italic" id="crawling-title"></h2>
+      </div>
+      <div style="width: 100%; display: flex; justify-content: center">
+        <button
+          id="view-btn"
+          style="display: none"
+          class="btn btn-outline-success mt-2"
+          type="button"
+        >
+          View progress
+        </button>
+      </div>
+      <div class="container py-5" id="progress-circle" style="display: none">
+        <div class="row" style="display: flex; justify-content: space-evenly">
+          <div class="col-xl-4 col-lg-6 mb-4">
+            <div class="bg-white rounded-lg p-5 shadow">
+              <h2 class="h6 font-weight-bold text-center mb-4">Chapters</h2>
+              <!-- Progress Chapters -->
+              <div
+                class="progress mx-auto chapters-progress"
+                id="chapter-percent-circle"
+                data-value="0"
+              >
+                <span class="progress-left">
+                  <span
+                    class="progress-bar border-warning"
+                    id="chapter-left-circle"
+                  ></span>
+                </span>
+                <span class="progress-right">
+                  <span
+                    class="progress-bar border-warning"
+                    id="chapter-right-circle"
+                  ></span>
+                </span>
+                <div
+                  class="progress-value w-100 h-100 rounded-circle d-flex align-items-center justify-content-center"
+                >
+                  <div class="h2 font-weight-bold">
+                    <span id="chapter-percent">0</span
+                    ><sup class="small">%</sup>
+                  </div>
+                </div>
+              </div>
+              <!-- END -->
+
+              <!-- Demo info -->
+              <div class="row text-center mt-4">
+                <div class="col-6 border-right">
+                  <div class="h4 font-weight-bold mb-0" id="chapter-value">
+                    0
+                  </div>
+                  <span class="small text-gray">Crawled</span>
+                </div>
+                <div class="col-6">
+                  <div
+                    class="h4 font-weight-bold mb-0"
+                    id="total-chapter-value"
+                  >
+                    0
+                  </div>
+                  <span class="small text-gray">Total</span>
+                </div>
+              </div>
+              <!-- END -->
+            </div>
+          </div>
+
+          <div class="col-xl-4 col-lg-6 mb-4">
+            <div class="bg-white rounded-lg p-5 shadow">
+              <h2 class="h6 font-weight-bold text-center mb-4">Images</h2>
+              <!-- Progress Images -->
+              <div
+                class="progress mx-auto images-progress"
+                id="image-percent-circle"
+                data-value="0"
+              >
+                <span class="progress-left">
+                  <span
+                    class="progress-bar border-warning"
+                    id="image-left-circle"
+                  ></span>
+                </span>
+                <span class="progress-right">
+                  <span
+                    class="progress-bar border-warning"
+                    id="image-right-circle"
+                  ></span>
+                </span>
+                <div
+                  class="progress-value w-100 h-100 rounded-circle d-flex align-items-center justify-content-center"
+                >
+                  <div class="h2 font-weight-bold">
+                    <span id="image-percent">0</span><sup class="small">%</sup>
+                  </div>
+                </div>
+              </div>
+              <!-- END -->
+
+              <!-- Demo info -->
+              <div class="row text-center mt-4">
+                <div class="col-6 border-right">
+                  <div class="h4 font-weight-bold mb-0" id="image-value">0</div>
+                  <span class="small text-gray">Crawled</span>
+                </div>
+                <div class="col-6">
+                  <div class="h4 font-weight-bold mb-0" id="total-image-value">
+                    0
+                  </div>
+                  <span class="small text-gray">Total</span>
+                </div>
+              </div>
+              <!-- END -->
+            </div>
+          </div>
+        </div>
+        <div style="width: 100%; display: flex; justify-content: center">
+          <button id="hide-btn" class="btn btn-outline-info" type="button">
+            Hide
+          </button>
+        </div>
+      </div>
+
+      <div class="search-input mb-2 mt-4" style="display: flex">
+        <div class="has-search">
+          <button id="check-btn" class="btn btn-outline-secondary shadow">
+            Check update
+          </button>
+          <button id="add-manga-btn" class="btn btn-outline-secondary shadow">
+            Add manga
+          </button>
+        </div>
+        <div class="search-input-field has-search">
+          <span class="fa fa-search form-control-feedback"></span>
+          <input
+            id="table-search-input"
+            type="text"
+            class="form-control shadow"
+            placeholder="Search..."
+            aria-label="Search..."
+            aria-describedby="basic-addon2"
+          />
+        </div>
+      </div>
+
+      <table
+        id="main-table"
+        class="table table-striped mb-5 shadow"
+        cellspacing="0"
+        width="100%"
+      >
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">
+              <input
+                type="checkbox"
+                id="check-all"
+                style="transform: scale(1.5)"
+              />
+            </th>
+            <th scope="col">Name</th>
+            <th scope="col" style="text-align: center">Chapters</th>
+            <th scope="col" style="text-align: center">Images</th>
+            <th scope="col">Last crawled</th>
+            <th scope="col" style="text-align: center">Recrawl</th>
+            <th scope="col" style="text-align: center">Upload</th>
+            <th scope="col" style="text-align: center">Delete</th>
+          </tr>
+        </thead>
+        <tbody id="table-data"></tbody>
+      </table>
+    </div>
+  </body>
+  <script>
+    $(document).ready(function () {
+      $("#table-search-input").on("keyup", function () {
+        var value = $(this).val().toLowerCase();
+        $("#table-data tr").filter(function () {
+          $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+        });
+      });
+    });
+
+    async function updateList() {
+      console.log("Update list");
+      document.getElementById("table-data").innerHTML = "";
+      const response = await axios.get("http://localhost:8080/data");
+      const data = response.data;
+      const mapNameRes = await axios.get("http://localhost:8080/map");
+      const mapName = mapNameRes.data.data; // key: slug in bato/zin , value: slug in mangatic
+      data.forEach((val, idx) => {
+        const isMangatic = Object.keys(mapName).includes(val.name);
+
+        const source = val.url.includes("zinmanga") ? "zinmanga" : "bato";
+        const newRow = `<tr>.
+            <th scope="row">${idx + 1}</th>
+            <th>
+              <input value='{"url":"${val.url}","numOfChapters":${
+          isMangatic ? mapName[val.name]?.numOfChapters : 0
+        }}' type="checkbox" class="checkbox" style="transform: scale(1.5)">
+            </th>
+            <td>
+              <a href="${window.location.origin}/detail?manga=${
+          val.name
+        }&source=${source}&url=${val.url}&otherStore=${
+          val.otherStore
+        }&mangaticName=${
+          isMangatic ? mapName[val.name].name : "nope"
+        }&numOfChapters=${isMangatic ? mapName[val.name]?.numOfChapters : 0}"
+                style="text-decoration: none; color: black;" target="_blank" class="manga-url" >
+                ${
+                  isMangatic
+                    ? "<span class='badge badge-info'>Mangastic</span>" +
+                      mapName[val.name].name
+                    : val.name
+                }
+              </a>
+              <span><a href="${
+                val.url
+              }" target="_blank"><i class="fa fa-external-link"></i></a></span>
+              <span id="${val.url}"></span>
+            </td>
+            <td style="text-align: center;">${val.allChapter}</td>
+            <td style="text-align: center;">${val.allImage}</td>
+            <td>${val.dateModified}</td>
+            <td style="text-align: center;">
+              ${
+                val.otherStore
+                  ? ""
+                  : `
+                <button onclick="crawl('${val.url}')" class="btn btn-outline-success recrawl-btn" type="button">
+                  Re-Crawl
+                </button>
+              `
+              }
+            </td>
+            <td style="text-align: center;">
+              ${
+                val.otherStore
+                  ? ""
+                  : `
+                <button onclick="uploadFile('${val.url}', '${val.name}')" class="btn btn-outline-info upload-btn" type="button">
+                  Upload
+                </button>
+              `
+              }
+            </td>
+            <td style="text-align: center;">
+              <button onclick="deleteFile('${val.url}', '${
+          val.name
+        }')" class="btn btn-outline-danger delete-btn" type="button">
+                Delete
+              </button>
+            </td>
+          </tr>`;
+        document.getElementById("table-data").innerHTML += newRow;
+        const newChapter = localStorage.getItem(val.url);
+        if (newChapter) {
+          document.getElementById(val.url).innerHTML =
+            localStorage.getItem(val.url) === "0"
+              ? "<span class='badge badge-success'>Updated</span>"
+              : `<span class='badge badge-danger'>${newChapter} New chapter</span>`;
+        }
+      });
+    }
+    updateList();
+
+    function deleteFile(url, name) {
+      Swal.fire({
+        title: "Are you sure?",
+        text: "You will not be able to recover this file!",
+        icon: "error",
+        showCancelButton: true,
+        confirmButtonText: "Yes, delete it!",
+      }).then(async (value) => {
+        if (value?.value === true) {
+          const data = {
+            url: url,
+            name: name,
+          };
+          const response = await axios.post(
+            "http://localhost:8080/delete",
+            data
+          );
+          if (response.data.success === true) {
+            Swal.fire({
+              icon: "success",
+              title: "Delete '" + name + "'' successfully!",
+              timer: 5000,
+              confirmButtonText: "Done",
+            });
+            updateList();
+          }
+        }
+      });
+    }
+
+    function uploadFile(url, name) {
+      Swal.fire({
+        title: "Upload this manga?",
+        text: "This manga will be upload to server!",
+        icon: "info",
+        showCancelButton: true,
+      }).then(async (value) => {
+        if (value?.isConfirmed === true) {
+          const data = {
+            url: url,
+            name: name,
+            domain: window.location.origin,
+          };
+          $(".loading").css("display", "block");
+          console.log(data);
+          const response = await axios.post(
+            "http://localhost:8080/upload",
+            data
+          );
+          $(".loading").css("display", "none");
+
+          if (response.data.success === true) {
+            Swal.fire({
+              icon: "success",
+              title: "Upload '" + name + "'' successfully!",
+              confirmButtonText: "Done",
+            });
+            updateList();
+          }
+        }
+      });
+    }
+
+    function percentageToDegrees(percentage) {
+      return (percentage / 100) * 360;
+    }
+    function updateCircle() {
+      $(".progress").each(function () {
+        var value = $(this).attr("data-value");
+        var left = $(this).find(".progress-left .progress-bar");
+        var right = $(this).find(".progress-right .progress-bar");
+        if (value > 0) {
+          if (value <= 50) {
+            right.css(
+              "transform",
+              "rotate(" + percentageToDegrees(value) + "deg)"
+            );
+          } else {
+            right.css("transform", "rotate(180deg)");
+            left.css(
+              "transform",
+              "rotate(" + percentageToDegrees(value - 50) + "deg)"
+            );
+          }
+        }
+      });
+    }
+
+    const hideBtn = document.getElementById("hide-btn");
+    hideBtn.addEventListener("click", () => {
+      hideBtn.style.display = "none";
+      const progressCircle = document.getElementById("progress-circle");
+      progressCircle.style.display = "none";
+      const viewBtn = document.getElementById("view-btn");
+      viewBtn.style.display = "block";
+    });
+
+    const viewBtn = document.getElementById("view-btn");
+    viewBtn.addEventListener("click", () => {
+      viewBtn.style.display = "none";
+      const progressCircle = document.getElementById("progress-circle");
+      progressCircle.style.display = "block";
+      const hideBtn = document.getElementById("hide-btn");
+      hideBtn.style.display = "block";
+    });
+
+    const checkAllBtn = document.getElementById("check-all");
+    checkAllBtn.addEventListener("click", () => {
+      const checkBoxes = document.getElementsByClassName("checkbox");
+      Array.from(checkBoxes).forEach((item) => {
+        item.checked = checkAllBtn.checked;
+      });
+    });
+
+    function resetCircle() {
+      document.getElementById("chapter-value").innerText = 0;
+      document.getElementById("total-chapter-value").innerText = 0;
+      document.getElementById("chapter-percent").innerText = 0;
+      document
+        .getElementById("chapter-percent-circle")
+        .setAttribute("data-value", 0);
+
+      document.getElementById("image-value").innerText = 0;
+      document.getElementById("total-image-value").innerText = 0;
+      document.getElementById("image-percent").innerText = 0;
+      document
+        .getElementById("image-percent-circle")
+        .setAttribute("data-value", 0);
+
+      document.getElementById("chapter-left-circle").style.transform =
+        "rotate(0deg)";
+      document.getElementById("chapter-right-circle").style.transform =
+        "rotate(0deg)";
+      document.getElementById("image-left-circle").style.transform =
+        "rotate(0deg)";
+      document.getElementById("image-right-circle").style.transform =
+        "rotate(0deg)";
+    }
+
+    const btnCrawl = document.getElementById("btn-crawl");
+
+    function crawling(link) {
+      btnCrawl.innerHTML = '<i class="fa fa-refresh fa-spin"></i>  Loading';
+      btnCrawl.setAttribute("disabled", "disabled");
+      const progressCircle = document.getElementById("progress-circle");
+      progressCircle.style.display = "block";
+      const viewBtn = document.getElementById("view-btn");
+      viewBtn.style.display = "none";
+      const hideBtn = document.getElementById("hide-btn");
+      hideBtn.style.display = "block";
+      document.getElementById("crawling-title").innerText = link;
+    }
+
+    function crawl(link) {
+      document.body.scrollTop = 0;
+      document.documentElement.scrollTop = 0;
+
+      const socket = io();
+      socket.emit("domain", {
+        domain: window.location.origin,
+      });
+
+      if (link.includes("bato.to")) {
+        socket.emit("download-bato", {
+          link: link,
+        });
+        crawling(link);
+      } else if (link.includes("zinmanga.com")) {
+        socket.emit("download-zinmanga", {
+          link: link,
+        });
+        crawling(link);
+      }
+
+      resetCircle();
+      Swal.fire({
+        icon: "warning",
+        title: "It will take a few minutes to set up...",
+        timer: 5000,
+        confirmButtonText: "Got it!",
+      });
+
+      socket.on(
+        "download-status",
+        ({ allChapter, chapter, image, allImage }) => {
+          document.getElementById("chapter-value").innerText = chapter;
+          document.getElementById("total-chapter-value").innerText = allChapter;
+          const chapterPercent = Math.floor((chapter / allChapter) * 100);
+          document.getElementById("chapter-percent").innerText = chapterPercent;
+          document
+            .getElementById("chapter-percent-circle")
+            .setAttribute("data-value", chapterPercent);
+
+          document.getElementById("image-value").innerText = image;
+          document.getElementById("total-image-value").innerText = allImage;
+          const imagePercent = Math.floor((image / allImage) * 100);
+          document.getElementById("image-percent").innerText = imagePercent;
+          document
+            .getElementById("image-percent-circle")
+            .setAttribute("data-value", imagePercent);
+
+          updateCircle();
+        }
+      );
+      socket.on("download-completed", (errorImages) => {
+        finishedCrawl(link, errorImages);
+        updateCircle();
+        resetCircle();
+      });
+    }
+    function finishedCrawl(link, errImages) {
+      updateList();
+      localStorage.setItem(link, 0);
+      btnCrawl.innerHTML = "Crawl";
+      btnCrawl.disabled = false;
+      document.getElementById("crawling-title").innerText = "";
+      Swal.fire({
+        icon: "success",
+        title: "Crawl completed",
+        text:
+          errImages === 0 ? "" : errImages + " images can not be downloaded!!",
+        confirmButtonText: "Comfirm!",
+      });
+    }
+
+    btnCrawl.addEventListener("click", () => {
+      const inputCrawl = document.getElementById("input-crawl").value;
+      crawl(inputCrawl);
+    });
+
+    const addMangaBtn = document.getElementById("add-manga-btn");
+    addMangaBtn.addEventListener("click", () => {
+      Swal.fire({
+        title: "Add manga",
+        html: `
+        <div class="form-upload-manga">
+        <label for="slug-manga">Link truyện trên mangatk</label>
+        <input id="slug-manga" type="text" >
+        <label for="link-manga" >Link manga(bato or zinmanga)</label>
+        <input id="link-manga" type="text">
+        </div>
+     `,
+        showCancelButton: true,
+      }).then(async (result) => {
+        console.log(result);
+        if (result.value == true) {
+          const data = {
+            slugMangatic: $("#slug-manga").val().split("/").at(-2),
+            linkManga: $("#link-manga").val(),
+          };
+          if (data.slugMangatic.length == 0 || data.linkManga.length == 0) {
+            Swal.fire({
+              icon: "info",
+              title: "You must enter slug manga and link manga",
+            });
+          } else {
+            $(".loading").css("display", "block");
+            const response = await axios.post(
+              "http://localhost:8080/check-new-manga",
+              data
+            );
+            $(".loading").css("display", "none");
+            Swal.fire({
+              icon: response.data.success === true ? "success" : "error",
+              title:
+                response.data.success === true
+                  ? "Add successfully"
+                  : response.data.message,
+            });
+            updateList();
+          }
+        }
+      });
+    });
+
+    const checkBtn = document.getElementById("check-btn");
+    checkBtn.addEventListener("click", async () => {
+      checkBtn.innerHTML = '<i class="fa fa-refresh fa-spin"></i>  Checking';
+      const checkBoxes = document.getElementsByClassName("checkbox");
+      const checkedBox = Array.from(checkBoxes).filter((item) => item.checked);
+      const newCheckedBox = checkedBox.map((item) =>
+        JSON.parse(item.defaultValue)
+      );
+      const data = newCheckedBox.map((item) => item);
+      const response = await axios.post("http://localhost:8080/check", data);
+      response.data.data.forEach((item) => {
+        console.log(item.newChapter);
+        localStorage.setItem(item.url, JSON.stringify(item.newChapter));
+        document.getElementById(item.url).innerHTML =
+          item.newChapter === "0"
+            ? "<span class='badge badge-success'>Updated</span>"
+            : `<span class='badge badge-danger'>${item.newChapter} New chapter</span>`;
+      });
+      updateList();
+      checkBtn.innerHTML = "Check update";
+      const checkAllBtn = document.getElementById("check-all");
+      checkAllBtn.checked = false;
+    });
+  </script>
+</html>

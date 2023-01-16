@@ -1,0 +1,28 @@
+{
+  "name": "zinmanga",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon crawl.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.2.0",
+    "cheerio": "^1.0.0-rc.12",
+    "cloudscraper": "^4.6.0",
+    "crypto-js": "^4.1.1",
+    "errorhandler": "^1.5.1",
+    "express": "^4.18.2",
+    "forever": "^4.0.3",
+    "fs-extra": "^11.1.0",
+    "moment": "^2.29.4",
+    "mysql": "^2.18.1",
+    "nodemon": "^2.0.20",
+    "request": "^2.88.2",
+    "socket.io": "^4.5.4",
+    "socket.io-client": "^4.5.4"
+  }
+}

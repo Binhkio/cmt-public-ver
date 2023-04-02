@@ -352,20 +352,15 @@ function insertMangaChaptersData(chapterIDs, chapters, mangaSlug, path, res) {
 }
 var database
 var databaseConfig = {
-    host: "67.205.186.98",
-    user: "mangastictk_YTM1YjAzYjRiZmFmYW_username",
-    password: "ZTU3YWQ1NTkxMzFhM2VlMzFiMWU1MmRmMjUx",
-    database: "mangastictk_YTM1YjAzYjRiZmFmYW_dbname",
-    port: 18188
+    host: "",
+    user: "",
+    password: "",
+    database: "",
+    port: 
 }
 var databaseConfig2 = {
-    host: "67.205.186.98",
-    user: "mangastictk_YTM1YjAzYjRiZmFmYW_username",
-    password: "ZTU3YWQ1NTkxMzFhM2VlMzFiMWU1MmRmMjUx",
-    database: "mangastictk_YTM1YjAzYjRiZmFmYW_dbname",
-    port: 18188
 }
-var DB_PREFIX = "YjdlN2"
+var DB_PREFIX = ""
 
 
 app.post('/upload', async (req, res) => {
